@@ -1,0 +1,64 @@
+{
+  "name": "@browserbasehq/ai-sdk",
+  "version": "0.1.0",
+  "description": "AI SDK tools for Browserbase powered by Stagehand",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsup src/index.ts --format esm,cjs --dts --clean",
+    "typecheck": "tsc -p tsconfig.build.json --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "npm run typecheck && npm run test",
+    "prepublishOnly": "npm run build && npm run lint"
+  },
+  "keywords": [
+    "ai-sdk",
+    "browserbase",
+    "stagehand",
+    "browser",
+    "browser-automation",
+    "tool-calling"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shrey150/browserbase-ai-sdk.git"
+  },
+  "bugs": {
+    "url": "https://github.com/shrey150/browserbase-ai-sdk/issues"
+  },
+  "homepage": "https://github.com/shrey150/browserbase-ai-sdk#readme",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "peerDependencies": {
+    "ai": "^5.0.0 || ^6.0.0"
+  },
+  "dependencies": {
+    "@browserbasehq/stagehand": "^3.1.0",
+    "zod": "^4.2.1"
+  },
+  "devDependencies": {
+    "@ai-sdk/openai": "^3.0.37",
+    "@types/node": "^22.13.1",
+    "ai": "^6.0.105",
+    "tsup": "^8.5.0",
+    "typescript": "^5.8.3",
+    "vitest": "^4.0.8"
+  }
+}
