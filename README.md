@@ -91,19 +91,6 @@ You can pass explicit Stagehand config via `stagehand` options if you do not wan
 - `shared` (default): one browser session reused across tool calls.
 - `per-call`: creates and closes a fresh session for each tool execution.
 
-## MCP parity mapping
-
-| MCP tool | `@browserbasehq/ai-sdk` default tool |
-|---|---|
-| `browserbase_stagehand_session_start` | `browserbase_stagehand_session_start` |
-| `browserbase_stagehand_session_close` | `browserbase_stagehand_session_close` |
-| `browserbase_stagehand_navigate` | `browserbase_stagehand_navigate` |
-| `browserbase_stagehand_get_url` | `browserbase_stagehand_get_url` |
-| `browserbase_screenshot` | `browserbase_screenshot` |
-| `browserbase_stagehand_act` | `browserbase_stagehand_act` |
-| `browserbase_stagehand_extract` | `browserbase_stagehand_extract` |
-| `browserbase_stagehand_observe` | `browserbase_stagehand_observe` |
-
 ## Registry metadata target
 
 - slug: `browserbase`
