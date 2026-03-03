@@ -54,7 +54,7 @@
     "zod": "^4.2.1"
   },
   "devDependencies": {
-    "@ai-sdk/openai": "^3.0.37",
+    "@ai-sdk/google": "^2.0.15",
     "@types/node": "^22.13.1",
     "ai": "^6.0.105",
     "tsup": "^8.5.0",

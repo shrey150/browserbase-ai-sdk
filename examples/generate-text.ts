@@ -1,16 +1,16 @@
 import { generateText } from "ai";
-import { openai } from "@ai-sdk/openai";
+import { google } from "@ai-sdk/google";
 import { createBrowserbaseTools } from "../src/index.js";
 
 async function main(): Promise<void> {
   const browserbase = createBrowserbaseTools({
     stagehand: {
-      model: "openai/gpt-4.1"
+      model: "google/gemini-3-flash-preview"
     }
   });
 
   const result = await generateText({
-    model: openai("gpt-4.1-mini"),
+    model: google("gemini-2.5-flash"),
     tools: browserbase.tools,
     maxSteps: 10,
     prompt: "Open https://example.com and summarize the page."

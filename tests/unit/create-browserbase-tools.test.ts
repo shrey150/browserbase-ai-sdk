@@ -86,7 +86,11 @@ vi.mock("@browserbasehq/stagehand", () => {
   }
 
   return {
-    Stagehand: MockStagehand
+    Stagehand: MockStagehand,
+    jsonSchemaToZod: vi.fn(() => ({
+      parse: (value: unknown) => value,
+      safeParse: (value: unknown) => ({ success: true, data: value })
+    }))
   };
 });
 

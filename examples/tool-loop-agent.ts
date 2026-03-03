@@ -1,16 +1,16 @@
 import { ToolLoopAgent } from "ai";
-import { openai } from "@ai-sdk/openai";
+import { google } from "@ai-sdk/google";
 import { createBrowserbaseTools } from "../src/index.js";
 
 async function main(): Promise<void> {
   const browserbase = createBrowserbaseTools({
     stagehand: {
-      model: "openai/gpt-4.1"
+      model: "google/gemini-3-flash-preview"
     }
   });
 
   const agent = new ToolLoopAgent({
-    model: openai("gpt-4.1-mini"),
+    model: google("gemini-2.5-flash"),
     tools: browserbase.tools,
     maxSteps: 10
   });

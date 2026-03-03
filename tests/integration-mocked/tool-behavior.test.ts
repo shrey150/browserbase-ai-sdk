@@ -2,7 +2,23 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const stagehandMock = vi.hoisted(() => {
   const instances: Array<{ page: { url: () => string } }> = [];
-  return { instances };
+  let lastActInput: unknown = null;
+  let lastExtractCall: unknown[] = [];
+  return {
+    instances,
+    get lastActInput() {
+      return lastActInput;
+    },
+    set lastActInput(value: unknown) {
+      lastActInput = value;
+    },
+    get lastExtractCall() {
+      return lastExtractCall;
+    },
+    set lastExtractCall(value: unknown[]) {
+      lastExtractCall = value;
+    }
+  };
 });
 
 vi.mock("@browserbasehq/stagehand", () => {
@@ -48,16 +64,29 @@ vi.mock("@browserbasehq/stagehand", () => {
       // no-op
     }
 
-    async act(instruction: string): Promise<Record<string, unknown>> {
+    async act(input: string | { selector: string; method?: string }): Promise<Record<string, unknown>> {
+      stagehandMock.lastActInput = input;
+      const message = typeof input === "string" ? input : `deterministic:${input.selector}`;
+
       return {
         success: true,
-        message: instruction,
+        message,
         actionDescription: "acted",
         actions: []
       };
     }
 
-    async extract(instruction: string): Promise<Record<string, unknown>> {
+    async extract(...args: unknown[]): Promise<Record<string, unknown>> {
+      stagehandMock.lastExtractCall = args;
+      const [instruction, schema] = args;
+
+      if (schema && typeof schema === "object" && "parse" in (schema as Record<string, unknown>)) {
+        return {
+          title: "Example Domain",
+          sourceInstruction: instruction
+        };
+      }
+
       return { extraction: instruction };
     }
 
@@ -83,7 +112,11 @@ vi.mock("@browserbasehq/stagehand", () => {
   }
 
   return {
-    Stagehand: MockStagehand
+    Stagehand: MockStagehand,
+    jsonSchemaToZod: vi.fn(() => ({
+      parse: (value: unknown) => value,
+      safeParse: (value: unknown) => ({ success: true, data: value })
+    }))
   };
 });
 
@@ -92,6 +125,8 @@ import { DEFAULT_TOOL_NAMES, createBrowserbaseTools } from "../../src/index.js";
 describe("mocked tool integration", () => {
   beforeEach(() => {
     stagehandMock.instances.length = 0;
+    stagehandMock.lastActInput = null;
+    stagehandMock.lastExtractCall = [];
   });
 
   it("shared strategy preserves page URL between tool calls", async () => {
@@ -144,7 +179,7 @@ describe("mocked tool integration", () => {
     const sdk = createBrowserbaseTools();
 
     const actTool = sdk.tools[DEFAULT_TOOL_NAMES.act] as {
-      execute: (input: { instruction: string }) => Promise<{ success: boolean }>;
+      execute: (input: { action: string }) => Promise<{ success: boolean }>;
     };
     const extractTool = sdk.tools[DEFAULT_TOOL_NAMES.extract] as {
       execute: (input: { instruction: string }) => Promise<{ extraction: string }>;
@@ -156,7 +191,7 @@ describe("mocked tool integration", () => {
       execute: (input: { instruction: string }) => Promise<{ success: boolean; completed: boolean }>;
     };
 
-    const actResult = await actTool.execute({ instruction: "click the button" });
+    const actResult = await actTool.execute({ action: "click the button" });
     const extractResult = await extractTool.execute({ instruction: "extract headline" });
     const observeResult = await observeTool.execute({});
     const agentResult = await agentTool.execute({ instruction: "complete checkout" });
@@ -166,5 +201,67 @@ describe("mocked tool integration", () => {
     expect(observeResult[0]?.selector).toBe("button#submit");
     expect(agentResult.success).toBe(true);
     expect(agentResult.completed).toBe(true);
+  });
+
+  it("keeps instruction as a backward-compatible alias", async () => {
+    const sdk = createBrowserbaseTools();
+    const actTool = sdk.tools[DEFAULT_TOOL_NAMES.act] as {
+      execute: (input: { instruction: string }) => Promise<{ success: boolean; message: string }>;
+    };
+
+    const result = await actTool.execute({ instruction: "click the button" });
+
+    expect(result.success).toBe(true);
+    expect(result.message).toBe("click the button");
+  });
+
+  it("supports deterministic act input via action", async () => {
+    const sdk = createBrowserbaseTools();
+    const actTool = sdk.tools[DEFAULT_TOOL_NAMES.act] as {
+      execute: (input: {
+        deterministicAction: { selector: string; method: string; arguments?: string[]; description?: string };
+      }) => Promise<{ success: boolean; message: string }>;
+    };
+
+    const result = await actTool.execute({
+      deterministicAction: {
+        selector: "xpath=/html/body/a",
+        description: "Click primary link",
+        method: "click",
+        arguments: []
+      }
+    });
+
+    expect(result.success).toBe(true);
+    expect(typeof result.message).toBe("string");
+    expect(stagehandMock.lastActInput).toMatchObject({
+      selector: "xpath=/html/body/a",
+      method: "click"
+    });
+  });
+
+  it("supports structured extract with schema input", async () => {
+    const sdk = createBrowserbaseTools();
+    const extractTool = sdk.tools[DEFAULT_TOOL_NAMES.extract] as {
+      execute: (input: {
+        instruction: string;
+        schema: Record<string, unknown>;
+      }) => Promise<{ title: string; sourceInstruction: string }>;
+    };
+
+    const result = await extractTool.execute({
+      instruction: "Extract the page title.",
+      schema: {
+        type: "object",
+        properties: {
+          title: { type: "string" }
+        },
+        required: ["title"]
+      }
+    });
+
+    expect(result.title).toBe("Example Domain");
+    expect(result.sourceInstruction).toBe("Extract the page title.");
+    expect(stagehandMock.lastExtractCall).toHaveLength(3);
   });
 });

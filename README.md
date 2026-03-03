@@ -5,24 +5,24 @@ AI SDK tools for Browserbase, powered by `@browserbasehq/stagehand`.
 ## Install
 
 ```bash
-npm install @browserbasehq/ai-sdk ai @ai-sdk/openai
+npm install @browserbasehq/ai-sdk ai @ai-sdk/google
 ```
 
 ## Quickstart
 
 ```ts
 import { generateText } from "ai";
-import { openai } from "@ai-sdk/openai";
+import { google } from "@ai-sdk/google";
 import { createBrowserbaseTools } from "@browserbasehq/ai-sdk";
 
 const browserbase = createBrowserbaseTools({
   stagehand: {
-    model: "openai/gpt-4.1"
+    model: "google/gemini-3-flash-preview"
   }
 });
 
 const result = await generateText({
-  model: openai("gpt-4.1-mini"),
+  model: google("gemini-2.5-flash"),
   tools: browserbase.tools,
   maxSteps: 10,
   prompt: "Open https://example.com and summarize what is on the page."
@@ -82,7 +82,7 @@ export type BrowserbaseToolset = {
 |---|---|---|
 | `BROWSERBASE_API_KEY` | Yes (Browserbase env) | Browserbase API key |
 | `BROWSERBASE_PROJECT_ID` | Yes (Browserbase env) | Browserbase project id |
-| `OPENAI_API_KEY` | Needed for `act/extract/observe/agent` with OpenAI models | LLM provider key |
+| `GEMINI_API_KEY` | Needed for `act/extract/observe/agent` with Gemini models | LLM provider key |
 
 You can pass explicit Stagehand config via `stagehand` options if you do not want to rely on environment defaults.
 
@@ -90,6 +90,15 @@ You can pass explicit Stagehand config via `stagehand` options if you do not wan
 
 - `shared` (default): one browser session reused across tool calls.
 - `per-call`: creates and closes a fresh session for each tool execution.
+
+## Act and extract behavior
+
+- `act` supports two input styles:
+  - `action` (recommended) for natural-language actions.
+  - `instruction` as a backward-compatible alias for natural-language actions.
+  - `deterministicAction` for selector/method execution when you already have a concrete target (for example from `observe`).
+- `extract` supports optional `schema` (JSON Schema). When present, it is converted with Stagehand's built-in `jsonSchemaToZod` and passed to `stagehand.extract(instruction, schema, options)`.
+- This package intentionally relies on Stagehand core self-heal and inference behavior, rather than re-implementing custom retry loops in this wrapper.
 
 ## Registry metadata target
 
